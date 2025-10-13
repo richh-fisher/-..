@@ -1,0 +1,16 @@
+{
+  "name": "wlfi-token-monitor",
+  "version": "1.0.0",
+  "description": "Auto-transfer WFLI tokens on Ethereum",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "ethers": "^5.7.2",
+    "dotenv": "^16.0.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
