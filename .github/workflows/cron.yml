@@ -1,9 +1,7 @@
 name: WFLI Token Monitor
 on:
   schedule:
-    # Runs every 2 minutes
-    - cron: '*/2 * * * *'
-  # Allows manual triggering from GitHub UI
+    - cron: '*/1 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -29,3 +27,16 @@ jobs:
           INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
           TOKEN_ADDRESS: ${{ secrets.TOKEN_ADDRESS }}
         run: node scripts/check-transfers.js
+
+    # Add notification on failure
+    - name: Notify on failure
+      if: failure()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: '🚨 WFLI Monitor Failed',
+            body: `Workflow run failed: ${context.runId}`
+          })
