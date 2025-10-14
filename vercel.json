@@ -17,13 +17,11 @@
     },
     {
       "src": "/api/cron/check-transfers",
-      "dest": "/api/cron/check-transfers.js",
-      "methods": ["GET", "POST"]
+      "dest": "/api/cron/check-transfers.js"
     },
     {
       "src": "/api/manual/trigger",
-      "dest": "/api/manual/trigger.js",
-      "methods": ["GET", "POST"]
+      "dest": "/api/manual/trigger.js"
     }
   ],
   "crons": [

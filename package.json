@@ -16,7 +16,6 @@
     "@vercel/kv": "^0.2.0"
   },
   "scripts": {
-    "start": "nodemon solmain.js",
     "dev": "vercel dev",
     "build": "echo 'No build step needed'"
   }
