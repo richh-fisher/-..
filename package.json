@@ -15,8 +15,8 @@
     "nodemon": "^3.1.10",
     "@vercel/kv": "^0.2.0"
   },
-  "scripts": {
-    "dev": "vercel dev",
-    "build": "echo 'No build step needed'"
+ "scripts": {
+    "monitor": "node scripts/check-transfers.js",
+    "test": "echo 'No tests yet'"
   }
 }

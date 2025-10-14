@@ -1,20 +1,15 @@
-const { TokenMonitor } = require('../../lib/ethereum');
-const { Storage } = require('../../lib/storage');
+const { TokenMonitor } = require('../lib/ethereum');
+const { Storage } = require('../lib/storage');
 
-module.exports = async (req, res) => {
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Connection', 'keep-alive');
-
+async function main() {
+    console.log('🚀 Starting WFLI Token Monitor...');
+    console.log('⏰', new Date().toISOString());
+    
     try {
-        // Simple cron secret check (optional but recommended)
-        if (process.env.CRON_SECRET && req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
-            return res.status(401).json({ error: 'Unauthorized' });
-        }
-
         const monitor = new TokenMonitor();
         const storage = new Storage();
 
-        // Get current block number first
+        // Get current block number
         const currentBlock = await monitor.provider.getBlockNumber();
         
         // Get last checked block from storage
@@ -22,8 +17,8 @@ module.exports = async (req, res) => {
         
         // If no last block or it's too old, start from recent blocks
         if (lastBlock === 0 || currentBlock - lastBlock > 1000) {
-            lastBlock = currentBlock - 100; // Check last 100 blocks
-            console.log(`🆕 Starting from recent blocks: ${lastBlock} to ${currentBlock}`);
+            lastBlock = currentBlock - 100;
+            console.log(`🆕 Starting from recent blocks: ${lastBlock}`);
         }
 
         console.log(`🔍 Scanning blocks ${lastBlock} to ${currentBlock}`);
@@ -34,20 +29,25 @@ module.exports = async (req, res) => {
         let transfersProcessed = 0;
         const results = [];
 
+        console.log(`📊 Found ${events.length} transfer events`);
+
         for (const event of events) {
             const txHash = event.transactionHash;
             
-            // Skip if already processed (in this session)
+            // Skip if already processed
             if (await storage.isTransactionProcessed(txHash)) {
                 console.log(`⏭️ Skipping already processed TX: ${txHash}`);
                 continue;
             }
 
             console.log(`🎯 New WFLI transfer detected: ${txHash}`);
+            console.log(`   From: ${event.args.from}`);
+            console.log(`   Amount: ${event.args.value.toString()}`);
             
             try {
                 // Wait a bit for block confirmation
-                await new Promise(resolve => setTimeout(resolve, 5000));
+                console.log('⏳ Waiting for confirmation...');
+                await new Promise(resolve => setTimeout(resolve, 10000));
                 
                 // Process the transfer
                 const result = await monitor.transferTokens();
@@ -69,10 +69,15 @@ module.exports = async (req, res) => {
                     error: error.message,
                     status: 'failed'
                 });
+                
+                // If it's an insufficient funds error, we should stop
+                if (error.message.includes('insufficient funds')) {
+                    console.error('🚨 Insufficient ETH for gas fees!');
+                }
             }
         }
 
-        // Update last checked block to current block
+        // Update last checked block
         await storage.setLastCheckedBlock(currentBlock);
 
         // Update statistics
@@ -82,28 +87,38 @@ module.exports = async (req, res) => {
             transfersProcessed: transfersProcessed
         });
 
-        const response = {
-            success: true,
-            results: {
-                blocksScanned: { from: lastBlock, to: currentBlock },
-                transfersFound: events.length,
-                transfersProcessed: transfersProcessed,
-                details: results
-            },
-            statistics: stats,
-            storageInfo: storage.getStorageInfo(),
-            timestamp: new Date().toISOString()
-        };
+        // Get wallet balance for reporting
+        const balance = await monitor.getWalletBalance();
 
-        console.log(`✅ Cron job completed: ${transfersProcessed}/${events.length} transfers processed`);
-        res.status(200).json(response);
+        console.log('📈 ========== MONITORING REPORT ==========');
+        console.log(`✅ Checks completed: ${stats.totalChecks}`);
+        console.log(`🎯 Transfers found: ${events.length}`);
+        console.log(`🚀 Transfers processed: ${transfersProcessed}`);
+        console.log(`💰 ETH Balance: ${balance.eth}`);
+        console.log(`🪙 WFLI Balance: ${balance.wlfi}`);
+        console.log(`📦 Last block checked: ${currentBlock}`);
+        console.log('⏰', new Date().toISOString());
+        console.log('==========================================');
+
+        // Exit successfully
+        process.exit(0);
 
     } catch (error) {
-        console.error('❌ Cron job failed:', error);
-        res.status(500).json({
-            success: false,
-            error: error.message,
-            timestamp: new Date().toISOString()
-        });
+        console.error('❌ MONITOR FAILED:', error);
+        process.exit(1);
     }
-};
+}
+
+// Handle uncaught errors
+process.on('uncaughtException', (error) => {
+    console.error('💥 Uncaught Exception:', error);
+    process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
+    process.exit(1);
+});
+
+// Run the monitor
+main();
