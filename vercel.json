@@ -1,0 +1,43 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/**/*.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "pages/**/*.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/",
+      "dest": "/pages/index.js"
+    },
+    {
+      "src": "/api/cron/check-transfers",
+      "dest": "/api/cron/check-transfers.js",
+      "methods": ["GET", "POST"]
+    },
+    {
+      "src": "/api/manual/trigger",
+      "dest": "/api/manual/trigger.js",
+      "methods": ["GET", "POST"]
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/check-transfers",
+      "schedule": "*/2 * * * *"
+    }
+  ],
+  "functions": {
+    "api/cron/check-transfers.js": {
+      "maxDuration": 60
+    },
+    "api/manual/trigger.js": {
+      "maxDuration": 60
+    }
+  }
+}
