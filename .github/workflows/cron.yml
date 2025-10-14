@@ -1,7 +1,7 @@
 name: WFLI Token Monitor
 on:
   schedule:
-     - cron: '* * * * *'
+    - cron: '* * * * *'
   workflow_dispatch:
 
 jobs:
@@ -28,15 +28,14 @@ jobs:
           TOKEN_ADDRESS: ${{ secrets.TOKEN_ADDRESS }}
         run: node scripts/check-transfers.js
 
-    # Add notification on failure
       - name: Notify on failure
         if: failure()
         uses: actions/github-script@v6
         with:
-        script: |
-          github.rest.issues.create({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            title: '🚨 WFLI Monitor Failed',
-            body: `Workflow run failed: ${context.runId}`
-          })
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 WFLI Monitor Failed',
+              body: `Workflow run failed: ${context.runId}`
+            })
