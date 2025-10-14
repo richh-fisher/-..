@@ -2,7 +2,7 @@ name: WFLI Token Monitor
 on:
   schedule:
     # Runs every 2 minutes
-    - cron: '*/1 * * * *'
+    - cron: '*/2 * * * *'
   # Allows manual triggering from GitHub UI
   workflow_dispatch:
 
